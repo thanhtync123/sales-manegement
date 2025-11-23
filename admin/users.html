@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="vi">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin - Users</title>
+  <link rel="stylesheet" href="./css/index.css" />
+</head>
+<body data-page="users">
+  <div id="app">
+    <div data-include="./partials/sidebar.html"></div>
+    <div class="main">
+      <div data-include="./partials/header.html"></div>
+      <main class="content">
+        <section class="panel">
+          <h2>Users</h2>
+          <p>Users management page</p>
+          <table id="usersTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Tên</th>
+                <th>Email</th>
+                <th>Mật khẩu</th>
+                <th>Quyền</th>
+              </tr>
+            </thead>
+            <tbody>
+            </tbody>
+          </table>
+        </section>
+      </main>
+      <div data-include="./partials/footer.html"></div>
+    </div>
+  </div>
+  <script src="./js/include.js"></script>
+</body>
+</html>
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+  const tbody = document.querySelector("#usersTable tbody");
+  try {
+    const res = await fetch("/api/users");
+    const users = await res.json();
+    tbody.innerHTML = users.map(u => `
+      <tr>
+        <td>${u.id}</td>
+        <td>${u.name}</td>
+        <td>${u.email}</td>
+        <td>${u.password}</td>
+        <td>${u.role}</td>
+      </tr>
+    `).join("");
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="5">Không tải được dữ liệu</td></tr>`;
+    console.error(err);
+  }
+});
+</script>
