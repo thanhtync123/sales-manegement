@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"/><title>Product</title></head>
+<body>
+  <a href="/public/products.html">Back</a>
+  <h1 id="title">Loading...</h1>
+  <pre id="json"></pre>
+
+  <script>
+    function q(name){ return new URLSearchParams(location.search).get(name); }
+    async function load() {
+      const id = q('id');
+      if (!id) { document.getElementById('title').textContent = 'No id'; return; }
+      const res = await fetch('/api/products/' + id);
+      if (!res.ok) { document.getElementById('title').textContent = 'Not found'; return; }
+      const item = await res.json();
+      document.getElementById('title').textContent = item.name || ('Product #' + id);
+      document.getElementById('json').textContent = JSON.stringify(item, null, 2);
+    }
+    load().catch(e => { document.getElementById('title').textContent = e.message; });
+  </script>
+</body>
+</html>
+

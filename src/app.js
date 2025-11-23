@@ -1,9 +1,11 @@
 const express = require("express");
-const cors = require("cors");
+const path = require("path");
 const app = express();
 
-app.use(cors());
 app.use(express.json());
+
+// serve public under /public (-> access http://localhost:3000/public/)
+app.use("/public", express.static(path.join(__dirname, "../public")));
 
 app.get("/", (req, res) => {
   res.send("API Sales Management Running...");
