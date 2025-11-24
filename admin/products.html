@@ -1,26 +1,112 @@
 <!doctype html>
 <html lang="vi">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Admin - Users</title>
   <link rel="stylesheet" href="./css/index.css" />
 </head>
+
 <body data-page="products">
   <div id="app">
     <div data-include="./partials/sidebar.html"></div>
     <div class="main">
       <div data-include="./partials/header.html"></div>
       <main class="content">
-        
+        <form id="frm_product" enctype="multipart/form-data">
+          ID <input type="text" name="id" id="productId" readonly>
+          Tên sản phẩm <input type="text" name="name" id="name">
+          SKU <input type="text" name="sku" id="sku">
+          Danh mục <select id="category" name="category">
+            <option value="">-- Chọn danh mục --</option>
+          </select>
+          Giá sản phẩm <input type="text" name="price" id="price">
+          Số lượng <input type="text" name="stock" id="stock">
+          Hình ảnh <input type="file" name="image" id="image" accept="image/*">
+          Mô tả <textarea id="description" name="description" rows="3" cols="30"></textarea>
+          <button>Thêm</button>
+        </form>
+        <table id="productTable">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Tên SP</th>
+              <th>SKU</th>
+              <th>Danh mục</th>
+              <th>Giá</th>
+              <th>Số lượng</th>
+              <th>Hình ảnh</th>
+              <th>Mô tả</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+          </tbody>
+          <tbody>
+          </tbody>
+        </table>
       </main>
       <div data-include="./partials/footer.html"></div>
     </div>
   </div>
+
   <script src="./js/include.js"></script>
   <script>
     document.addEventListener("includes:loaded", async () => {
+      loadCategories()
+      loadTableProduct()
+      document.getElementById("frm_product").addEventListener("submit", function (e) {
+        e.preventDefault();
+        submitForm();
+      });
+
     });
+    async function loadCategories() {
+      try {
+        const res = await fetch("http://localhost:3000/api/categories");
+        const categories = await res.json();
+        document.getElementById("category").innerHTML = `
+      <option value="">-- Chọn danh mục --</option>
+      ${categories.map(c => `<option value="${c.id}">${c.name}</option>`).join("")}
+    `;
+      } catch (err) {
+        alert(err)
+        document.querySelector("select[name='category']").innerHTML = `<option disabled>Lỗi tải danh mục</option>`;
+      }
+    }
+    async function loadTableProduct() {
+      try {
+        const res = await fetch("http://localhost:3000/api/products");
+        const products = await res.json();
+        document.getElementById("tbody").innerHTML = `
+            ${products.map(p => `            <tr>
+              <td>${p.id}</td>
+              <td>${p.name}</td>
+              <td>${p.sku}</td>
+              <td>${p.category_id}</td>
+              <td>${p.price}</td>
+              <td>${p.stock}</td>
+              <td>${p.image}</td>
+              <td>${p.description}</td>
+            </tr>`).join("")}
+         `;
+      } catch (err) {
+        alert(err)
+      }
+    }
+    async function submitForm() {
+      const form = document.getElementById("frm_product");
+      const formData = new FormData(form);  
+      const res = await fetch('/api/products', {
+        method: 'POST',
+        body: formData  
+      });
+      if (res.ok) {
+        alert('Thêm thành công!');
+        form.reset();
+        loadTableProduct();
+      }
+    }
 
   </script>
 </body>

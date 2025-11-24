@@ -56,6 +56,36 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS Categories (
+    id INT PRIMARY KEY ,
+    name VARCHAR(50),
+    description VARCHAR(100)
+);
+ALTER TABLE Categories
+MODIFY COLUMN id INT PRIMARY KEY AUTO_INCREMENT;
+ALTER TABLE Categories DROP PRIMARY KEY;
+ALTER TABLE Categories MODIFY COLUMN id INT NOT NULL AUTO_INCREMENT, ADD PRIMARY KEY(id);
+
+ALTER TABLE products DROP FOREIGN KEY fk_category;
+ALTER TABLE Categories DROP PRIMARY KEY;
+ALTER TABLE Categories MODIFY COLUMN id INT NOT NULL AUTO_INCREMENT, ADD PRIMARY KEY(id);
+
+
+ALTER TABLE products
+ADD COLUMN category_id INT AFTER name;
+ALTER TABLE products
+ADD CONSTRAINT fk_category
+FOREIGN KEY (category_id) REFERENCES Categories(id);
+
+select * from products 
+INSERT INTO Categories (name, description) VALUES
+('Laptop', 'Máy tính xách tay'),
+('Điện thoại', 'Điện thoại thông minh'),
+('Phụ kiện', 'Chuột, bàn phím, tai nghe...'),
+('Màn hình', 'Màn hình máy tính'),
+('Mạng', 'Router, Switch...'),
+('Lưu trữ', 'Ổ cứng, SSD...');
+
 INSERT INTO products (name, sku, price, stock, category, image) VALUES
 ('Laptop Dell XPS 13','SKU001',1200.00,10,'Laptop','xps13.jpg'),
 ('MacBook Pro 16','SKU002',2500.00,5,'Laptop','mbp16.jpg'),
@@ -82,16 +112,16 @@ INSERT INTO customers (name, phone, email, address) VALUES
 ('Phan Thị J','0901001010','j@gmail.com','Vũng Tàu');
 
 INSERT INTO users (name, email, password, role) VALUES
-('Admin','admin@gmail.com','$2b$10$hashedpassword1','admin'),
-('User1','user1@gmail.com','$2b$10$hashedpassword2','user'),
-('User2','user2@gmail.com','$2b$10$hashedpassword3','user'),
-('User3','user3@gmail.com','$2b$10$hashedpassword4','user'),
-('User4','user4@gmail.com','$2b$10$hashedpassword5','user'),
-('User5','user5@gmail.com','$2b$10$hashedpassword6','user'),
-('User6','user6@gmail.com','$2b$10$hashedpassword7','user'),
-('User7','user7@gmail.com','$2b$10$hashedpassword8','user'),
-('User8','user8@gmail.com','$2b$10$hashedpassword9','user'),
-('User9','user9@gmail.com','$2b$10$hashedpassword10','user');
+('Admin','admin1@gmail.com','$2b$10$hashedpassword1','admin'),
+('User1','user12@gmail.com','$2b$10$hashedpassword2','user'),
+('User2','user23@gmail.com','$2b$10$hashedpassword3','user'),
+('User3','user34@gmail.com','$2b$10$hashedpassword4','user'),
+('User4','user45@gmail.com','$2b$10$hashedpassword5','user'),
+('User5','user56@gmail.com','$2b$10$hashedpassword6','user'),
+('User6','user67@gmail.com','$2b$10$hashedpassword7','user'),
+('User7','user78@gmail.com','$2b$10$hashedpassword8','user'),
+('User8','user89@gmail.com','$2b$10$hashedpassword9','user'),
+('User9','user910@gmail.com','$2b$10$hashedpassword10','user');
 INSERT INTO orders (customer_id, total, vat, discount, status) VALUES
 (1,1320,120,0,'confirmed'),
 (2,2750,250,0,'confirmed'),
@@ -118,3 +148,11 @@ INSERT INTO order_items (order_id, product_id, quantity, price) VALUES
 (8,8,1,300),
 (9,9,1,150),
 (10,10,1,120);
+use salesdb
+ALTER TABLE products ADD COLUMN description varchar(100) after image
+SELECT * FROM Products
+alter table products drop column category
+alter table products modify column price int 
+SELECT p.id, p.name, c.name, p.sku, p.price, p.stock, p.image, p.description,
+FROM products p
+INNER JOIN categories c ON c.id=p.category_id
