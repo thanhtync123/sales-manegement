@@ -21,9 +21,14 @@ html, body {
 }
 
 body {
-  font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 20px;
   background: var(--content-bg);
   color: var(--text);
+}
+* {
+  font-size: 20px !important;
+  font-family: 'Times New Roman', Times, serif;
 }
 
 #app {

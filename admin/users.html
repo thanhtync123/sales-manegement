@@ -7,15 +7,28 @@
   <title>Admin - Users</title>
   <link rel="stylesheet" href="./css/index.css" />
 </head>
+
 <body data-page="users">
   <div id="app">
     <div data-include="./partials/sidebar.html"></div>
     <div class="main">
       <div data-include="./partials/header.html"></div>
       <main class="content">
+        <form id="userForm">
+          ID <input type="text" name="id" readonly>
+          Tên <input type="text" name="name">
+          Email <input type="text" name="email">
+          Mật khẩu <input type="text" name="password">
+          <select name="role" id="">
+            <option value="admin">admin</option>
+            <option value="user">user</option>
+          </select>
+          <button type="submit" id="btnAdd">Thêm</button>
+          <button type="button" id="btnDelete">Xóa</button>
+          <button type="button" id="btnEdit">Sửa</button>
+          <button type="button" id="btnRefresh">Làm mới</button>
+        </form>
         <section class="panel">
-          <h2>Users</h2>
-          <p>Users management page</p>
           <table id="usersTable">
             <thead>
               <tr>
@@ -35,26 +48,119 @@
     </div>
   </div>
   <script src="./js/include.js"></script>
+  <script>
+    document.addEventListener("includes:loaded", async () => {
+      const tbody = document.querySelector("#usersTable tbody");
+      const form = document.getElementById("userForm");
+      document.getElementById("btnDelete").disabled = !false;
+      document.getElementById("btnEdit").disabled = !false;
+      async function loadTableUser() {
+        try {
+          const res = await fetch("/api/users");
+          const users = await res.json();
+          tbody.innerHTML = users.map(u => `
+              <tr data-id="${u.id}">
+                <td>${u.id}</td>
+                <td>${u.name}</td>
+                <td>${u.email}</td>
+                <td>${u.password}</td>
+                <td>${u.role}</td>
+              </tr>
+            `).join("");
+          $('#usersTable').DataTable({
+            destroy: true,
+            pageLength: 10,
+            searching: true
+          });
+        } catch (err) {
+          tbody.innerHTML = `<tr><td colspan="5">Không tải được dữ liệu</td></tr>`;
+        }
+      }
+      loadTableUser();
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+          const res = await fetch('/api/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: form.name.value,
+              email: form.email.value,
+              password: form.password.value,
+              role: form.role.value
+            })
+          });
+          if (res.ok) {
+            const result = await res.json();
+            alert(result.message);
+            loadTableUser();
+          } else
+            alert('Lỗi!');
+        } catch (ex) {
+          alert(ex);
+        }
+      });
+      tbody.addEventListener("click", (e) => {
+        const row = e.target.closest("tr");
+        if (!row) return;
+        form.id.value = row.cells[0].innerText;
+        form.name.value = row.cells[1].innerText;
+        form.email.value = row.cells[2].innerText;
+        form.password.value = row.cells[3].innerText;
+        form.role.value = row.cells[4].innerText;
+        document.getElementById("btnAdd").disabled = true;
+        document.getElementById("btnDelete").disabled = !true;
+        document.getElementById("btnEdit").disabled = !true;
+        const allRows = tbody.querySelectorAll("tr");
+        allRows.forEach(r => r.style.backgroundColor = "");
+        row.style.backgroundColor = "#d1e7fd";
+      });
+      document.getElementById("btnDelete").addEventListener("click", async (e) => {
+        try {
+          const res = await fetch(`/api/users/${form.id.value}`, {
+            method: 'DELETE'
+          });
+          alert((await res.json()).message);
+          form.reset();
+          loadTableUser();
+          document.getElementById("btnAdd").disabled = !true;
+          document.getElementById("btnDelete").disabled = !false;
+          document.getElementById("btnEdit").disabled = !false;
+        } catch (error) {
+          alert(error);
+        }
+      });
+      document.getElementById("btnEdit").addEventListener("click", async (e) => {
+        try {
+          const res = await fetch(`/api/users/${form.id.value}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: form.name.value,
+              email: form.email.value,
+              password: form.password.value,
+              role: form.role.value
+            })
+          });
+          alert((await res.json()).message);
+          form.reset();
+          loadTableUser();
+          document.getElementById("btnAdd").disabled = !true;
+          document.getElementById("btnDelete").disabled = !false;
+          document.getElementById("btnEdit").disabled = !false;
+        } catch (error) {
+          alert(error);
+        }
+      });
+      document.getElementById("btnRefresh").addEventListener("click", async (e) => {
+        form.reset();
+        document.getElementById("btnAdd").disabled = !true;
+        document.getElementById("btnEdit").disabled = !false;
+        document.getElementById("btnDelete").disabled = !false;
+      });
+    });
+
+  </script>
 </body>
+
 </html>
-<script>
-document.addEventListener("DOMContentLoaded", async () => {
-  const tbody = document.querySelector("#usersTable tbody");
-  try {
-    const res = await fetch("/api/users");
-    const users = await res.json();
-    tbody.innerHTML = users.map(u => `
-      <tr>
-        <td>${u.id}</td>
-        <td>${u.name}</td>
-        <td>${u.email}</td>
-        <td>${u.password}</td>
-        <td>${u.role}</td>
-      </tr>
-    `).join("");
-  } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="5">Không tải được dữ liệu</td></tr>`;
-    console.error(err);
-  }
-});
-</script>
