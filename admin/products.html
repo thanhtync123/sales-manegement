@@ -43,9 +43,9 @@
               <th>Mô tả</th>
             </tr>
           </thead>
-          <tbody id="tbody">
+          <tbody>
           </tbody>
-     
+
         </table>
       </main>
       <div data-include="./partials/footer.html"></div>
@@ -56,178 +56,209 @@
   <script src="./js/cellClick.js"></script>
   <script>
     document.addEventListener("includes:loaded", async () => {
-      loadCategories()
-      loadTableProduct()
-      initCellClick('productTable');
-      document.getElementById("frm_product").addEventListener("submit", function (e) {
+      const tbody = document.querySelector("#productTable tbody");
+      const form = document.getElementById("frm_product");
+      let dataTable = null;
+      function resetForm() {
+        form.reset();
+        document.getElementById("productId").value = '';
+        document.getElementById("previewImg").style.display = 'none';
+      }
+
+      loadCategories();
+
+      async function loadTableProduct() {
+        try {
+          const res = await fetch("http://localhost:3000/api/products");
+          const products = await res.json();
+
+
+
+          if (dataTable) dataTable.destroy();
+
+          tbody.innerHTML = products.map(p => `
+      <tr>
+        <td>${p.id}</td>
+        <td>${p.name}</td>
+        <td>${p.sku}</td>
+        <td>${p.category_id}</td>
+        <td>${p.price}</td>
+        <td>${p.stock}</td>
+        <td>${p.image ? `<img src="${p.image}" width="100">` : "Chưa có"}</td>
+        <td>${p.description || ""}</td>
+      </tr>
+    `).join("");
+
+          dataTable = new DataTable('#productTable');
+
+        } catch (err) {
+          alert("Lỗi tải sản phẩm: " + err);
+        }
+      }
+
+      loadTableProduct();
+
+      form.addEventListener("submit", async (e) => {
         e.preventDefault();
         submitForm();
       });
+
       imageInput.addEventListener('change', function (e) {
         loadPreviewImage(e);
       });
-      const tbody = document.querySelector("#productTable tbody");
+
       tbody.addEventListener("click", (e) => {
-        const form = document.getElementById("frm_product");
-        try {
-          const row = e.target.closest("tr");
-          if (!row) return;
-          document.getElementById("productId").value = row.cells[0].innerText;
-          document.getElementById("name").value = row.cells[1].innerText;
-          document.getElementById("sku").value = row.cells[2].innerText;
-          document.getElementById("price").value = row.cells[4].innerText;
-          document.getElementById("stock").value = row.cells[5].innerText;
-          document.getElementById("description").value = row.cells[7].innerText;
-          const select = document.getElementById("category");
-          for (let i = 0; i < select.options.length; i++) {
-            if (select.options[i].text === row.cells[3].innerText) {
-              select.selectedIndex = i;
-              break;
-            }
-          }
-          const previewImg = document.getElementById("previewImg");
-          previewImg.src = row.cells[6].innerText; // hoặc đường dẫn đúng
-          previewImg.style.display = 'block';
-        } catch (error) {
-          alert(error)
-        }
-      });
-      generateSku();
-    });
-    // ---------------------------------------------------------------------
-    async function loadCategories() {
-      try {
-        const res = await fetch("http://localhost:3000/api/categories");
-        const categories = await res.json();
-        document.getElementById("category").innerHTML = `
-      <option value="">-- Chọn danh mục --</option>
-      ${categories.map(c => `<option value="${c.id}">${c.name}</option>`).join("")}
-    `;
-      } catch (err) {
-        alert(err)
-        document.querySelector("select[name='category']").innerHTML = `<option disabled>Lỗi tải danh mục</option>`;
-      }
-    }
-    async function generateSku() {
-      try {
+        const row = e.target.closest("tr");
+        if (!row) return;
+        form.id.value = row.cells[0].innerText;
+        form.name.value = row.cells[1].innerText;
+        form.sku.value = row.cells[2].innerText;
+        form.price.value = row.cells[4].innerText;
+        form.stock.value = row.cells[5].innerText;
+        form.description.value = row.cells[7].innerText;
+
         const select = document.getElementById("category");
-        const categoryName = select.selectedOptions[0].text;
-        const initials = categoryName
-          .split(" ")
-          .map(word => word.charAt(0).toUpperCase())
-          .join("");
-        const res = await fetch("http://localhost:3000/api/products");
-        const products = await res.json();
-        const existingSkus = products.map(p => p.sku);
-        let newSku;
-        do {
-          const randomNumber = Math.floor(1000 + Math.random() * 9000);
-          newSku = initials + randomNumber;
-        } while (existingSkus.includes(newSku));
-        console.log("SKU mới:", newSku);
-        return newSku;
-      } catch (err) {
-        console.error(err);
-      }
-    }
-    async function setGenerateSKU() {
-      const sku = await generateSku();
-      document.getElementById("sku").value = sku;
-    }
+        for (let i = 0; i < select.options.length; i++) {
+          if (select.options[i].text === row.cells[3].innerText) {
+            select.selectedIndex = i;
+            break;
+          }
+        }
 
+        const previewImg = document.getElementById("previewImg");
+        previewImg.src = row.cells[6].innerText;
+        previewImg.style.display = 'block';
 
-
-         let dataTable = null
-    async function loadTableProduct() {
-      try {
-        const res = await fetch("http://localhost:3000/api/products");
-        const products = await res.json();
-              if (dataTable)       dataTable.destroy();
-        document.getElementById("tbody").innerHTML = `
-            ${products.map(p => `<tr>
-              <td>${p.id}</td>
-              <td>${p.name}</td>
-              <td>${p.sku}</td>
-              <td>${p.category_id}</td>
-              <td>${p.price}</td>
-              <td>${p.stock}</td>
-              <td>
-              ${`<img src="${p.image}"  width="150px">` }
-              </td>
-              <td>${p.description}</td>
-            </tr>`).join("")}
-         `;
-                       dataTable = new DataTable('#productTable');
-      
-      } catch (err) {
-        alert(err)
-      }
-    }
-    async function submitForm() {
-      const form = document.getElementById("frm_product");
-      const formData = new FormData(form);
-      const res = await fetch('/api/products', {
-        method: 'POST',
-        body: formData
+        const allRows = tbody.querySelectorAll("tr");
+        allRows.forEach(r => r.style.backgroundColor = "");
+        row.style.backgroundColor = "#d1e7fd";
       });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        alert((data.message || "Lỗi thêm sản phẩm"));
-        return;
-      }
-         loadTableProduct();
-      alert("✅ " + data.message);
-   
-    }
-    async function deleteProduct() {
-      try {
-        const id = document.getElementById("productId").value;
-        const res = await fetch(`/api/products/${id}`, {
-          method: 'DELETE',
-        });
-        alert((await res.json()).message);
-        loadTableProduct();
-      } catch (error) {
-      await  alert(error)
-      }
-    }
-    async function updateProduct() {
-      const id = document.getElementById("productId").value;
-      try {
-        const form = document.getElementById("frm_product");
+
+      async function submitForm() {
         const formData = new FormData(form);
-        const res = await fetch(`/api/products/${id}`, {
-          method: 'PUT',
+        const res = await fetch('/api/products', {
+          method: 'POST',
           body: formData
         });
+        loadTableProduct();
         const data = await res.json();
         if (!res.ok || !data.success) {
-          alert((data.message || "Lỗi cập nhật sản phẩm"));
+          alert((data.message || "Lỗi thêm sản phẩm"));
           return;
         }
-            loadTableProduct();
         alert("✅ " + data.message);
 
-      } catch (error) {
-        alert(error)
+
+        resetForm();
       }
 
-    }
-    function loadPreviewImage(e) {
-      const imageInput = document.getElementById("imageInput");
-      const previewImg = document.getElementById("previewImg");
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function (e) {
-          previewImg.src = e.target.result;
-          previewImg.style.display = 'block';
-        };
-        reader.readAsDataURL(file);
-      } else {
-        previewImg.style.display = 'none';
+      async function deleteProduct() {
+        try {
+          const id = form.id.value;
+          if (!id) {
+            alert("Vui lòng chọn sản phẩm để xóa");
+            return;
+          }
+          const res = await fetch(`/api/products/${id}`, {
+            method: 'DELETE',
+          });
+          const data = await res.json();
+          alert(data.message);
+          resetForm();
+          loadTableProduct();
+        } catch (error) {
+          alert("Lỗi: " + error);
+        }
       }
-    }
+
+      async function updateProduct() {
+        const id = form.id.value;
+        if (!id) {
+          alert("Vui lòng chọn sản phẩm để sửa");
+          return;
+        }
+        try {
+          const formData = new FormData(form);
+          const res = await fetch(`/api/products/${id}`, {
+            method: 'PUT',
+            body: formData
+          });
+          loadTableProduct();
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            alert((data.message || "Lỗi cập nhật sản phẩm"));
+            return;
+          }
+          alert("✅ " + data.message);
+          resetForm();
+  
+        } catch (error) {
+          alert("Lỗi: " + error);
+        }
+      }
+
+      async function generateSku() {
+        try {
+          const select = document.getElementById("category");
+          const categoryName = select.selectedOptions[0].text;
+          const initials = categoryName
+            .split(" ")
+            .map(word => word.charAt(0).toUpperCase())
+            .join("");
+          const res = await fetch("http://localhost:3000/api/products");
+          const products = await res.json();
+          const existingSkus = products.map(p => p.sku);
+          let newSku;
+          do {
+            const randomNumber = Math.floor(1000 + Math.random() * 9000);
+            newSku = initials + randomNumber;
+          } while (existingSkus.includes(newSku));
+          return newSku;
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      async function setGenerateSKU() {
+        const sku = await generateSku();
+        document.getElementById("sku").value = sku;
+      }
+
+      function loadPreviewImage(e) {
+        const previewImg = document.getElementById("previewImg");
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            previewImg.src = e.target.result;
+            previewImg.style.display = 'block';
+          };
+          reader.readAsDataURL(file);
+        } else {
+          previewImg.style.display = 'none';
+        }
+      }
+
+      async function loadCategories() {
+        try {
+          const res = await fetch("http://localhost:3000/api/categories");
+          const categories = await res.json();
+          document.getElementById("category").innerHTML = `
+            <option value="">-- Chọn danh mục --</option>
+            ${categories.map(c => `<option value="${c.id}">${c.name}</option>`).join("")}
+          `;
+        } catch (err) {
+          alert(err);
+          document.querySelector("select[name='category']").innerHTML = `<option disabled>Lỗi tải danh mục</option>`;
+        }
+      }
+
+      // Expose functions to global scope
+      window.deleteProduct = deleteProduct;
+      window.updateProduct = updateProduct;
+      window.setGenerateSKU = setGenerateSKU;
+      window.loadPreviewImage = loadPreviewImage;
+    });
   </script>
 </body>
 

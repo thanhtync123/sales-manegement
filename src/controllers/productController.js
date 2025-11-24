@@ -24,26 +24,27 @@ async function getProducts(req, res) {
 async function createProduct(req, res) {
   try {
     const { name, category, sku, price, stock, description } = req.body;
-    const imagePath = req.file ? `/images/${req.file.filename}` : null;
+    const imagePath = req.file ? `/images/${req.file.filename}` : `/images/defaultimg.png`;
 
-    const query = `
-      INSERT INTO Products 
-      (name, category_id, sku, price, stock, image, description)
-      VALUES (:name, :category, :sku, :price, :stock, :image, :description)
-    `;
+const query = `
+  INSERT INTO Products 
+  (name, category_id, sku, price, stock, image, description)
+  VALUES (:name, :category, :sku, :price, :stock, :image, :description)
+`;
 
-    await sequelize.query(query, {
-      replacements: {
-        name,
-        category,
-        sku,
-        price,
-        stock,
-        image: imagePath,
-        description
-      },
-      type: QueryTypes.INSERT
-    });
+await sequelize.query(query, {
+  replacements: {
+    name,
+    category,
+    sku,
+    price,
+    stock,
+    image: imagePath,   // bind imagePath ở đây
+    description
+  },
+  type: QueryTypes.INSERT
+});
+
 
     res.json({ message: "Thêm thành công" });
 
@@ -103,7 +104,7 @@ async function updateProduct(req, res) {
 
     `;
       await sequelize.query(query, {
-        type: QueryTypes.UPDATE
+        type: QueryTypes.Upda
       });
     }
     else {
