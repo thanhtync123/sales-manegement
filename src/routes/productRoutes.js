@@ -6,6 +6,6 @@ const { getProducts, createProduct, deleteProduct, updateProduct } = require("..
 router.get("/products", getProducts);
 router.post("/products", upload.single('image'), createProduct);
 router.delete("/products/:id", deleteProduct);
-router.put("/products/:id", updateProduct);
+router.put("/products/:id", upload.single('image'), updateProduct);
 
 module.exports = router;

@@ -18,7 +18,7 @@
           ID <input type="text" name="id" id="productId" readonly>
           Tên sản phẩm <input type="text" name="name" id="name">
           SKU <input type="text" name="sku" id="sku">
-          Danh mục <select id="category" name="category">
+          Danh mục <select onchange="setGenerateSKU()" id="category" name="category">
             <option value="">-- Chọn danh mục --</option>
           </select>
           Giá sản phẩm <input type="text" name="price" id="price">
@@ -27,6 +27,8 @@
           <img id="previewImg" style="max-width:200px;max-height:200px;display:none;border:1px solid #ddd">
           Mô tả <textarea id="description" name="description" rows="3" cols="30"></textarea>
           <button>Thêm</button>
+          <button type="button" onclick="deleteProduct()">Xóa</button>
+          <button type="button" onclick="updateProduct()">Sửa</button>
         </form>
         <table id="productTable">
           <thead>
@@ -43,8 +45,7 @@
           </thead>
           <tbody id="tbody">
           </tbody>
-          <tbody>
-          </tbody>
+     
         </table>
       </main>
       <div data-include="./partials/footer.html"></div>
@@ -74,17 +75,24 @@
           document.getElementById("productId").value = row.cells[0].innerText;
           document.getElementById("name").value = row.cells[1].innerText;
           document.getElementById("sku").value = row.cells[2].innerText;
-          document.getElementById("category").value = row.cells[3].innerText;
           document.getElementById("price").value = row.cells[4].innerText;
           document.getElementById("stock").value = row.cells[5].innerText;
-          // document.getElementById("btnAdd").disabled = true;
-          // document.getElementById("btnDelete").disabled = !true;
-          // document.getElementById("btnEdit").disabled = !true;
+          document.getElementById("description").value = row.cells[7].innerText;
+          const select = document.getElementById("category");
+          for (let i = 0; i < select.options.length; i++) {
+            if (select.options[i].text === row.cells[3].innerText) {
+              select.selectedIndex = i;
+              break;
+            }
+          }
+          const previewImg = document.getElementById("previewImg");
+          previewImg.src = row.cells[6].innerText; // hoặc đường dẫn đúng
+          previewImg.style.display = 'block';
         } catch (error) {
           alert(error)
         }
-
       });
+      generateSku();
     });
     // ---------------------------------------------------------------------
     async function loadCategories() {
@@ -100,6 +108,45 @@
         document.querySelector("select[name='category']").innerHTML = `<option disabled>Lỗi tải danh mục</option>`;
       }
     }
+    async function generateSku() {
+      try {
+        const select = document.getElementById("category");
+        const categoryName = select.selectedOptions[0].text;
+        const initials = categoryName
+          .split(" ")
+          .map(word => word.charAt(0).toUpperCase())
+          .join("");
+        const res = await fetch("http://localhost:3000/api/products");
+        const products = await res.json();
+        const existingSkus = products.map(p => p.sku);
+        let newSku;
+        do {
+          const randomNumber = Math.floor(1000 + Math.random() * 9000);
+          newSku = initials + randomNumber;
+        } while (existingSkus.includes(newSku));
+        console.log("SKU mới:", newSku);
+        return newSku;
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    async function setGenerateSKU() {
+      const sku = await generateSku();
+      document.getElementById("sku").value = sku;
+    }
+
+    // Hàm helper để khởi tạo DataTable đơn giản
+    function initDataTable(tableId) {
+      if ($.fn.DataTable.isDataTable('#' + tableId)) {
+        $('#' + tableId).DataTable().destroy();
+      }
+      $('#' + tableId).DataTable({
+        pageLength: 10,
+        searching: true,
+        responsive: true
+      });
+    }
+
     async function loadTableProduct() {
       try {
         const res = await fetch("http://localhost:3000/api/products");
@@ -112,10 +159,15 @@
               <td>${p.category_id}</td>
               <td>${p.price}</td>
               <td>${p.stock}</td>
-              <td>${p.image}</td>
+        <td>
+        ${p.image ? `<img src="${p.image}"  width="150px">` : "Chưa có"}
+        </td>
+
               <td>${p.description}</td>
             </tr>`).join("")}
          `;
+         
+         initDataTable('productTable');
       } catch (err) {
         alert(err)
       }
@@ -127,11 +179,46 @@
         method: 'POST',
         body: formData
       });
-      if (res.ok) {
-        alert('Thêm thành công!');
-        form.reset();
-        loadTableProduct();
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        alert((data.message || "Lỗi thêm sản phẩm"));
+        return;
       }
+      alert("✅ " + data.message);
+      await loadTableProduct();
+    }
+    async function deleteProduct() {
+      try {
+        const id = document.getElementById("productId").value;
+        const res = await fetch(`/api/products/${id}`, {
+          method: 'DELETE',
+        });
+        alert((await res.json()).message);
+        loadTableProduct();
+      } catch (error) {
+      await  alert(error)
+      }
+    }
+    async function updateProduct() {
+      const id = document.getElementById("productId").value;
+      try {
+        const form = document.getElementById("frm_product");
+        const formData = new FormData(form);
+        const res = await fetch(`/api/products/${id}`, {
+          method: 'PUT',
+          body: formData
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          alert((data.message || "Lỗi cập nhật sản phẩm"));
+          return;
+        }
+        alert("✅ " + data.message);
+      await  loadTableProduct();
+      } catch (error) {
+        alert(error)
+      }
+
     }
     function loadPreviewImage(e) {
       const imageInput = document.getElementById("imageInput");
@@ -148,7 +235,6 @@
         previewImg.style.display = 'none';
       }
     }
-
   </script>
 </body>
 

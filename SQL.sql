@@ -153,6 +153,19 @@ ALTER TABLE products ADD COLUMN description varchar(100) after image
 SELECT * FROM Products
 alter table products drop column category
 alter table products modify column price int 
-SELECT p.id, p.name, c.name, p.sku, p.price, p.stock, p.image, p.description,
+
+SELECT p.id, p.name, c.name, p.sku, p.price, p.stock, p.image, p.description
 FROM products p
 INNER JOIN categories c ON c.id=p.category_id
+
+ALTER TABLE order_items
+DROP FOREIGN KEY order_items_ibfk_2;
+
+
+ALTER TABLE order_items
+ADD CONSTRAINT order_items_ibfk_2
+FOREIGN KEY (product_id) REFERENCES products(id)
+ON UPDATE CASCADE
+ON DELETE CASCADE;
+
+

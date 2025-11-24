@@ -4,6 +4,7 @@ const app = express();
 
 app.use(express.json());
 
+
 app.use("/public", express.static(path.join(__dirname, "../public")));
 app.use("/admin", express.static(path.join(__dirname, "../admin")));
 app.use("/images", express.static(path.join(__dirname, "../public/images")));
