@@ -4,7 +4,7 @@ const { QueryTypes } = require("sequelize");
 async function getProducts(req, res) {
   try {
     const query = `
-    SELECT p.id, p.name, c.name as category_id, p.sku, p.price, p.stock, p.image, p.description
+    SELECT p.id, p.name, c.name as category_name, p.sku, p.price, p.stock, p.image, p.description
     FROM products p
     INNER JOIN categories c ON c.id=p.category_id
     ORDER by p.id ASC

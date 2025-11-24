@@ -23,7 +23,8 @@
           </select>
           Giá sản phẩm <input type="text" name="price" id="price">
           Số lượng <input type="text" name="stock" id="stock">
-          Hình ảnh <input type="file" name="image" id="image" accept="image/*">
+          <input name="image" type="file" accept="image/*" id="imageInput">
+          <img id="previewImg" style="max-width:200px;max-height:200px;display:none;border:1px solid #ddd">
           Mô tả <textarea id="description" name="description" rows="3" cols="30"></textarea>
           <button>Thêm</button>
         </form>
@@ -51,16 +52,41 @@
   </div>
 
   <script src="./js/include.js"></script>
+  <script src="./js/cellClick.js"></script>
   <script>
     document.addEventListener("includes:loaded", async () => {
       loadCategories()
       loadTableProduct()
+      initCellClick('productTable');
       document.getElementById("frm_product").addEventListener("submit", function (e) {
         e.preventDefault();
         submitForm();
       });
+      imageInput.addEventListener('change', function (e) {
+        loadPreviewImage(e);
+      });
+      const tbody = document.querySelector("#productTable tbody");
+      tbody.addEventListener("click", (e) => {
+        const form = document.getElementById("frm_product");
+        try {
+          const row = e.target.closest("tr");
+          if (!row) return;
+          document.getElementById("productId").value = row.cells[0].innerText;
+          document.getElementById("name").value = row.cells[1].innerText;
+          document.getElementById("sku").value = row.cells[2].innerText;
+          document.getElementById("category").value = row.cells[3].innerText;
+          document.getElementById("price").value = row.cells[4].innerText;
+          document.getElementById("stock").value = row.cells[5].innerText;
+          // document.getElementById("btnAdd").disabled = true;
+          // document.getElementById("btnDelete").disabled = !true;
+          // document.getElementById("btnEdit").disabled = !true;
+        } catch (error) {
+          alert(error)
+        }
 
+      });
     });
+    // ---------------------------------------------------------------------
     async function loadCategories() {
       try {
         const res = await fetch("http://localhost:3000/api/categories");
@@ -96,15 +122,30 @@
     }
     async function submitForm() {
       const form = document.getElementById("frm_product");
-      const formData = new FormData(form);  
+      const formData = new FormData(form);
       const res = await fetch('/api/products', {
         method: 'POST',
-        body: formData  
+        body: formData
       });
       if (res.ok) {
         alert('Thêm thành công!');
         form.reset();
         loadTableProduct();
+      }
+    }
+    function loadPreviewImage(e) {
+      const imageInput = document.getElementById("imageInput");
+      const previewImg = document.getElementById("previewImg");
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          previewImg.src = e.target.result;
+          previewImg.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      } else {
+        previewImg.style.display = 'none';
       }
     }
 
