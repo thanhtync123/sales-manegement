@@ -87,52 +87,70 @@ async function deleteProduct(req, res) {
   }
 }
 async function updateProduct(req, res) {
-  let query = ``;
   try {
     const { name, category, sku, price, stock, description } = req.body;
     const imagePath = req.file ? `/images/${req.file.filename}` : null;
-    if (imagePath == null) {
-      query = `
-      UPDATE products 
-      SET name = '${name}', 
-      category_id = '${category}', 
-      sku = '${sku}', 
-      price = '${price}', 
-      stock = '${stock}', 
-      description = '${description}' 
-      WHERE (id = '${req.params.id}');
 
-    `;
-      await sequelize.query(query, {
-        type: QueryTypes.Upda
+    // Nếu có ảnh mới, xóa ảnh cũ
+    if (imagePath) {
+      // Lấy ảnh cũ
+      const selectQuery = `SELECT image FROM Products WHERE id = :id`;
+      const result = await sequelize.query(selectQuery, {
+        replacements: { id: req.params.id },
+        type: QueryTypes.SELECT
       });
-    }
-    else {
-      query = `
-      UPDATE products 
-      SET name = '${name}', 
-      category_id = '${category}', 
-      sku = '${sku}', 
-      price = '${price}', 
-      stock = '${stock}', 
-      description = '${description}' ,
-      image = '${imagePath}'
-      WHERE (id = '${req.params.id}');
 
-    `;
-      await sequelize.query(query, {
-        type: QueryTypes.UPDATE
-      });
+      if (result.length > 0 && result[0].image && result[0].image !== '/images/defaultimg.png') {
+        const oldFilePath = path.join(__dirname, "../../public/images", result[0].image.replace("/images/", ""));
+        if (fs.existsSync(oldFilePath)) {
+          fs.unlinkSync(oldFilePath);
+        }
+      }
     }
 
+    // Cập nhật dữ liệu
+    const updateQuery = imagePath ? `
+      UPDATE products
+      SET name = :name,
+          category_id = :category,
+          sku = :sku,
+          price = :price,
+          stock = :stock,
+          description = :description,
+          image = :image
+      WHERE id = :id
+    ` : `
+      UPDATE products
+      SET name = :name,
+          category_id = :category,
+          sku = :sku,
+          price = :price,
+          stock = :stock,
+          description = :description
+      WHERE id = :id
+    `;
+
+    await sequelize.query(updateQuery, {
+      replacements: {
+        id: req.params.id,
+        name,
+        category,
+        sku,
+        price,
+        stock,
+        description,
+        image: imagePath
+      },
+      type: QueryTypes.UPDATE
+    });
 
     res.json({ message: "Cập nhật thành công" });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: err.message });
   }
 }
+
 
 
 module.exports = {
