@@ -54,10 +54,12 @@
       const form = document.getElementById("userForm");
       document.getElementById("btnDelete").disabled = !false;
       document.getElementById("btnEdit").disabled = !false;
+      let dataTable = null
       async function loadTableUser() {
         try {
           const res = await fetch("/api/users");
           const users = await res.json();
+          if (dataTable)       dataTable.destroy();
           tbody.innerHTML = users.map(u => `
               <tr data-id="${u.id}">
                 <td>${u.id}</td>
@@ -67,11 +69,7 @@
                 <td>${u.role}</td>
               </tr>
             `).join("");
-          $('#usersTable').DataTable({
-            destroy: true,
-            pageLength: 10,
-            searching: true
-          });
+              dataTable = new DataTable('#usersTable');
         } catch (err) {
           tbody.innerHTML = `<tr><td colspan="5">Không tải được dữ liệu</td></tr>`;
         }
@@ -93,7 +91,8 @@
           if (res.ok) {
             const result = await res.json();
             alert(result.message);
-            loadTableUser();
+                  loadTableUser();
+      
           } else
             alert('Lỗi!');
         } catch (ex) {
@@ -122,10 +121,10 @@
           });
           alert((await res.json()).message);
           form.reset();
-          loadTableUser();
           document.getElementById("btnAdd").disabled = !true;
           document.getElementById("btnDelete").disabled = !false;
           document.getElementById("btnEdit").disabled = !false;
+                loadTableUser()
         } catch (error) {
           alert(error);
         }
@@ -144,10 +143,10 @@
           });
           alert((await res.json()).message);
           form.reset();
-          loadTableUser();
           document.getElementById("btnAdd").disabled = !true;
           document.getElementById("btnDelete").disabled = !false;
           document.getElementById("btnEdit").disabled = !false;
+          loadTableUser()
         } catch (error) {
           alert(error);
         }
