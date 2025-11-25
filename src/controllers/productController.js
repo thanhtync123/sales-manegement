@@ -58,8 +58,6 @@ await sequelize.query(query, {
 async function deleteProduct(req, res) {
   try {
     const id = req.params.id;
-
-    // Bước 1: Lấy tên file ảnh trước khi xóa
     const selectQuery = `SELECT image FROM Products WHERE id = :id`;
     const result = await sequelize.query(selectQuery, {
       replacements: { id },
@@ -90,10 +88,7 @@ async function updateProduct(req, res) {
   try {
     const { name, category, sku, price, stock, description } = req.body;
     const imagePath = req.file ? `/images/${req.file.filename}` : null;
-
-    // Nếu có ảnh mới, xóa ảnh cũ
     if (imagePath) {
-      // Lấy ảnh cũ
       const selectQuery = `SELECT image FROM Products WHERE id = :id`;
       const result = await sequelize.query(selectQuery, {
         replacements: { id: req.params.id },

@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Admin - Categories</title>
+    <link rel="stylesheet" href="./css/index.css" />
+</head>
+
+<body data-page="categories">
+    <div id="app">
+        <div data-include="./partials/sidebar.html"></div>
+        <div class="main">
+            <div data-include="./partials/header.html"></div>
+            <main class="content">
+                <form id="frm_categories">
+                    ID <input type="text" name="id" id="id">
+                    Tên danh mục <input type="text" name="name" id="name">
+                    Mô tả <input type="text" name="description" id="description">
+                    <button type="submit" id="btnAdd">Thêm</button>
+                    <button type="button" id="btnDelete">Xóa</button>
+                    <button type="button" id="btnEdit">Sửa</button>
+                      <button type="button" id="btnRefresh">Làm mới</button>
+                </form>
+                <table id="categoriesTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tên danh mục</th>
+                            <th>Mô tả</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+
+            </main>
+            <div data-include="./partials/footer.html"></div>
+        </div>
+    </div>
+    <script src="./js/include.js"></script>
+
+    <script>
+        document.addEventListener("includes:loaded", async () => {
+            const tbody = document.querySelector("#categoriesTable tbody");
+            let dataTable = null
+            async function loadTableCategories() {
+                try {
+                    const res = await fetch("/api/categories");
+                    const categories = await res.json();
+                    if (dataTable) dataTable.destroy();
+                    tbody.innerHTML = categories.map(c => `
+                    <tr data-id="${c.id}">
+                        <td>${c.id}</td>
+                        <td>${c.name}</td>
+                        <td>${c.description}</td>
+                    </tr>
+            `).join("");
+                    dataTable = new DataTable('#categoriesTable');
+                } catch (err) {
+                    tbody.innerHTML = `<tr><td colspan="1">Không tải được dữ liệu</td></tr>`;
+                    alert(err);
+                }
+            }
+            loadTableCategories();
+            tbody.addEventListener("click", (e) => {
+                const row = e.target.closest("tr");
+                if (!row) return;
+                const form = document.getElementById("frm_categories")
+                form.id.value = row.cells[0].innerText;
+                form.name.value = row.cells[1].innerText;
+                form.description.value = row.cells[2].innerText;
+                document.getElementById("btnAdd").disabled = true;
+                document.getElementById("btnDelete").disabled = !true;
+                document.getElementById("btnEdit").disabled = !true;
+                const allRows = tbody.querySelectorAll("tr");
+                allRows.forEach(r => r.style.backgroundColor = "");
+                row.style.backgroundColor = "#d1e7fd";
+            });
+            document.getElementById("frm_categories").addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const form = document.getElementById("frm_categories");
+                try {
+                    const res = await fetch('/api/categories', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name: form.name.value,
+                            description: form.description.value
+                        })
+                    });
+                    const result = await res.json();
+                    if (res.ok) {
+                        alert(result.message);
+                        loadTableCategories();
+                    } else
+                        alert(result.message + "else");
+                } catch (ex) {
+                    alert(ex + "catch");
+                }
+            });
+            document.getElementById("btnDelete").addEventListener("click", async (e) => {
+                const form = document.getElementById("frm_categories");
+                try {
+                    const res = await fetch(`/api/categories/${form.id.value}`, {
+                        method: 'DELETE'
+                    });
+                    const result = await res.json();
+                    if (res.ok) {
+                        alert(result.message);
+                        loadTableCategories();
+                    } else
+                        alert(result.message + "else");
+                    form.reset();
+                    document.getElementById("btnAdd").disabled = !true;
+                    document.getElementById("btnDelete").disabled = !false;
+                    document.getElementById("btnEdit").disabled = !false;
+                loadTableCategories();
+                } catch (error) {
+                    alert(error);
+                }
+            });
+            document.getElementById("btnEdit").addEventListener("click", async (e) => {
+                 const form = document.getElementById("frm_categories");
+                try {
+                    const res = await fetch(`/api/categories/${form.id.value}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name: form.name.value,
+                            description: form.description.value,
+                        })
+                    });
+                    alert((await res.json()).message);
+                    form.reset();
+                    document.getElementById("btnAdd").disabled = !true;
+                    document.getElementById("btnDelete").disabled = !false;
+                    document.getElementById("btnEdit").disabled = !false;
+                    loadTableCategories();
+                } catch (error) {
+                    alert(error);
+                }
+            });
+            document.getElementById("btnRefresh").addEventListener("click", async (e) => {
+                 const form = document.getElementById("frm_categories");
+                form.reset();
+                document.getElementById("btnAdd").disabled = !true;
+                document.getElementById("btnEdit").disabled = !false;
+                document.getElementById("btnDelete").disabled = !false;
+            });
+        });
+    </script>
+</body>
+
+</html>
